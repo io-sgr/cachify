@@ -32,10 +32,14 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
+        <it.redis.host>127.0.0.1</it.redis.host>
+        <it.redis.port>6379</it.redis.port>
+
         <dep.jackson.version>2.9.9</dep.jackson.version>
         <dep.google-guava.version>28.1-jre</dep.google-guava.version>
         <dep.google-jsr305.version>3.0.2</dep.google-jsr305.version>
         <dep.jedis.version>3.1.0</dep.jedis.version>
+        <dep.commons-pool2.version>2.6.2</dep.commons-pool2.version>
 
         <!-- For logging -->
         <dep.slf4j.version>1.7.28</dep.slf4j.version>
@@ -44,6 +48,8 @@
         <!-- For tests -->
         <dep.junit.version>4.12</dep.junit.version>
         <dep.mockito.version>2.23.4</dep.mockito.version>
+
+        <dep.plugin.docker.version>0.31.0</dep.plugin.docker.version>
     </properties>
 
     <dependencies>
@@ -67,6 +73,24 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -95,6 +119,11 @@
                 <artifactId>jedis</artifactId>
                 <version>${dep.jedis.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${dep.commons-pool2.version}</version>
+            </dependency>
 
             <!-- Logging -->
             <dependency>
@@ -106,7 +135,7 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${dep.slf4j.version}</version>
-                <scope>runtime</scope>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -136,5 +165,70 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-it-redis</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>redis:3.0.7-alpine</name>
+                                    <alias>it-redis</alias>
+                                    <run>
+                                        <ports>
+                                            <port>+it.redis.host:it.redis.port:6379</port>
+                                        </ports>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>remove-it-redis</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <environmentVariables>
+                        <IT_REDIS_HOST>${it.redis.host}</IT_REDIS_HOST>
+                        <IT_REDIS_PORT>${it.redis.port}</IT_REDIS_PORT>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${dep.plugin.docker.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>

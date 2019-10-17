@@ -18,25 +18,32 @@
 package io.sgr.cachify.redis;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Objects.nonNull;
 import static redis.clients.jedis.ScanParams.SCAN_POINTER_START;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sgr.cachify.BlockingCache;
 import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.ValueGetter;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolAbstract;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
@@ -44,15 +51,13 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCache.class);
 
-    private final JedisPool jedisPool;
+    private final JedisPoolAbstract jedisPool;
     private final ObjectMapper objectMapper;
     private final TypeReference<V> valueTypeRef = new TypeReference<V>() {
     };
 
-    public BlockingRedisCache(@Nonnull final JedisPool jedisPool, final ObjectMapper objectMapper) {
-        checkArgument(nonNull(jedisPool), "JedisPool should not be NULL!");
+    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool, @Nonnull final ObjectMapper objectMapper) {
         this.jedisPool = jedisPool;
-        checkArgument(nonNull(objectMapper), "ObjectMapper should not be NULL!");
         this.objectMapper = objectMapper;
     }
 
@@ -62,7 +67,11 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
-            return Optional.ofNullable(objectMapper.readValue(jedis.get(key), valueTypeRef));
+            final String json = jedis.get(key);
+            if (isNullOrEmpty(json)) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(objectMapper.readValue(json, valueTypeRef));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             return Optional.empty();
@@ -127,6 +136,96 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
     @Override
     public void close() {
         jedisPool.close();
+    }
+
+    public static <V> Builder<V> newBuilder() {
+        return new Builder<>();
+    }
+
+    public static class Builder<V> {
+
+        private static final int DEFAULT_MAX_TOTAL = Runtime.getRuntime().availableProcessors();
+        private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(2);
+        private static final ObjectMapper DEFAULT_OBJECT_MAPPER = new ObjectMapper();
+
+        private JedisPoolAbstract pool;
+        private int maxTotal;
+        private int timeout;
+        private ObjectMapper objectMapper;
+
+        /*
+         * The following fields are for single host
+         */
+        private String singleHost;
+        private int singleHostPort;
+
+        /*
+         * The following fields are for sentinel
+         */
+        private String masterName;
+        private Set<String> sentinels;
+
+        private Builder() {}
+
+        public Builder<V> singleHost(@Nonnull final String hostname, final int port) {
+            checkArgument(!isNullOrEmpty(hostname), "The hostname should be provided!");
+            checkArgument(port >= 1 && port <= 65535, "The port should be between 1 to 65535!");
+            this.singleHost = hostname;
+            this.singleHostPort = port;
+            return this;
+        }
+
+        public Builder<V> sentinel(@Nonnull final String masterName, final String... sentinels) {
+            checkArgument(!isNullOrEmpty(masterName), "Master name should be provided!");
+            this.masterName = masterName;
+            checkArgument(nonNull(sentinels), "Build without sentinel servers does not make sense!");
+            Set<String> validServers = Stream.of(sentinels)
+                    .map(servers -> new HashSet<>(Arrays.asList(servers.split(","))))
+                    .reduce((servers, otherServers) -> {
+                        servers.addAll(otherServers);
+                        return otherServers;
+                    })
+                    .orElseThrow(() -> new IllegalArgumentException("Should provide at least 2 sentinel servers!"));
+            checkArgument(validServers.size() > 1, "Should provide at least 2 sentinel servers!");
+            this.sentinels = validServers;
+            return this;
+        }
+
+        public Builder<V> pool(@Nonnull final JedisPoolAbstract pool) {
+            checkArgument(nonNull(pool), "Build with a NULL jedis pool does not make sense!");
+            this.pool = pool;
+            return this;
+        }
+
+        public Builder<V> setMaxTotal(final int maxTotal) {
+            this.maxTotal = maxTotal;
+            return this;
+        }
+
+        public Builder<V> timeout(final int timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Builder<V> objectMapper(@Nonnull final ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        public BlockingRedisCache<V> build() {
+            GenericObjectPoolConfig<?> config = new GenericObjectPoolConfig<>();
+            config.setMaxTotal(maxTotal <= 0 ? DEFAULT_MAX_TOTAL : maxTotal);
+            final JedisPoolAbstract pool = Optional.ofNullable(this.pool)
+                    .orElseGet(() -> {
+                        final int timeout = this.timeout <= 0 ? DEFAULT_TIMEOUT : this.timeout;
+                        if (nonNull(singleHost)) {
+                            return new JedisPool(config, singleHost, singleHostPort, timeout);
+                        }
+                        return new JedisSentinelPool(masterName, sentinels, config, timeout);
+                    });
+            return new BlockingRedisCache<>(pool, Optional.ofNullable(objectMapper).orElse(DEFAULT_OBJECT_MAPPER));
+        }
+
     }
 
 }
