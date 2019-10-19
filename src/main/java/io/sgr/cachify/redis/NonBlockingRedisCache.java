@@ -24,9 +24,6 @@ import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.NonBlockingCache;
 import io.sgr.cachify.ValueGetter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import redis.clients.jedis.JedisPool;
-
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -39,8 +36,9 @@ public class NonBlockingRedisCache<V> implements NonBlockingCache<V>, AutoClosea
     private final BlockingRedisCache<V> delegate;
     private final Executor executor;
 
-    public NonBlockingRedisCache(@Nonnull final JedisPool jedisPool, @Nonnull final ObjectMapper objectMapper, final Executor executor) {
-        this.delegate = new BlockingRedisCache<>(jedisPool, objectMapper);
+    public NonBlockingRedisCache(@Nonnull final BlockingRedisCache<V> delegate, @Nonnull final Executor executor) {
+        checkArgument(nonNull(delegate), "Missing delegate!");
+        this.delegate = delegate;
         checkArgument(nonNull(executor), "Missing executor!");
         this.executor = executor;
     }
