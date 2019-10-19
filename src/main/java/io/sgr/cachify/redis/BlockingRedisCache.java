@@ -49,7 +49,7 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
     private final TypeReference<V> valueTypeRef = new TypeReference<V>() {
     };
 
-    public BlockingRedisCache(@Nonnull final JedisPool jedisPool, final ObjectMapper objectMapper) {
+    public BlockingRedisCache(@Nonnull final JedisPool jedisPool, @Nonnull final ObjectMapper objectMapper) {
         checkArgument(nonNull(jedisPool), "JedisPool should not be NULL!");
         this.jedisPool = jedisPool;
         checkArgument(nonNull(objectMapper), "ObjectMapper should not be NULL!");
@@ -106,13 +106,13 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
     }
 
     @Override
-    public void bulkEvict(@Nonnull final String keyPrefix) {
+    public void bulkEvict(@Nonnull final String keyPattern) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
             String nextCursor = SCAN_POINTER_START;
             final ScanParams params = new ScanParams();
-            params.match(keyPrefix);
+            params.match(keyPattern);
             ScanResult<String> scanResult;
             do {
                 scanResult = jedis.scan(nextCursor, params);

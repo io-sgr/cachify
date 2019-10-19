@@ -86,9 +86,9 @@ public interface BlockingCache<V> {
     /**
      * Bulk remove object from cache using a given prefix of key.
      *
-     * @param keyPrefix
-     *         The prefix of key.
+     * @param keyPattern
+     *         The pattern of key.
      */
-    void bulkEvict(@Nonnull String keyPrefix);
+    void bulkEvict(@Nonnull String keyPattern);
 
 }

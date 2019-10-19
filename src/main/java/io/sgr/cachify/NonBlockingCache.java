@@ -87,10 +87,10 @@ public interface NonBlockingCache<V> {
     /**
      * Bulk remove object from cache using a given prefix of key.
      *
-     * @param keyPrefix
-     *         The prefix of key.
+     * @param keyPattern
+     *         The pattern of key.
      * @return An void {@link CompletableFuture}.
      */
-    CompletableFuture<Void> bulkEvict(@Nonnull String keyPrefix);
+    CompletableFuture<Void> bulkEvict(@Nonnull String keyPattern);
 
 }
