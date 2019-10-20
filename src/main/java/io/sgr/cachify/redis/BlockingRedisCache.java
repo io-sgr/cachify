@@ -26,8 +26,7 @@ import io.sgr.cachify.BlockingCache;
 import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.ValueGetter;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,35 +47,28 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
-public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
+public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCache.class);
 
     private final JedisPoolAbstract jedisPool;
-    private final ObjectMapper objectMapper;
-    private final TypeReference<V> valueTypeRef = new TypeReference<V>() {
-    };
 
-    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool, @Nonnull final ObjectMapper objectMapper) {
+    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool) {
         this.jedisPool = jedisPool;
-        this.objectMapper = objectMapper;
     }
 
-    public static <V> Builder<V> newBuilder() {
-        return new Builder<>();
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     @Nonnull
     @Override
-    public Optional<V> get(@Nonnull final String key) {
+    public Optional<String> get(@Nonnull final String key) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
-            final String json = jedis.get(key);
-            if (isNullOrEmpty(json)) {
-                return Optional.empty();
-            }
-            return Optional.ofNullable(objectMapper.readValue(json, valueTypeRef));
+            final String result = jedis.get(key);
+            return Optional.ofNullable(result).map(Strings::emptyToNull);
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             return Optional.empty();
@@ -85,24 +77,24 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
 
     @Nonnull
     @Override
-    public <E extends Throwable> Optional<V> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, V, E> getter) throws E {
-        final V value = get(key).orElse(getter.get(key));
+    public <E extends Throwable> Optional<String> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) throws E {
+        final String value = get(key).orElse(getter.get(key));
         return Optional.ofNullable(value);
     }
 
     @Nonnull
     @Override
-    public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
-        final V value = get(key).orElse(getter.get(key));
+    public Optional<String> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, String> getter) {
+        final String value = get(key).orElse(getter.get(key));
         return Optional.ofNullable(value);
     }
 
     @Override
-    public void put(@Nonnull final String key, @Nonnull final V value, final long expirationInMilli) {
+    public void put(@Nonnull final String key, @Nonnull final String value, final long expirationInMilli) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
-            jedis.set(key, objectMapper.writeValueAsString(value), SetParams.setParams().px(expirationInMilli));
+            jedis.set(key, value, SetParams.setParams().px(expirationInMilli));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -144,16 +136,14 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
     }
 
 
-    public static class Builder<V> {
+    public static class Builder {
 
         private static final int DEFAULT_MAX_TOTAL = Runtime.getRuntime().availableProcessors();
         private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(2);
-        private static final ObjectMapper DEFAULT_OBJECT_MAPPER = new ObjectMapper();
 
         private JedisPoolAbstract pool;
         private int maxTotal;
         private int timeout;
-        private ObjectMapper objectMapper;
 
         /*
          * The following fields are for single host
@@ -170,7 +160,7 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
         private Builder() {
         }
 
-        public Builder<V> singleHost(@Nonnull final String hostname, final int port) {
+        public Builder singleHost(@Nonnull final String hostname, final int port) {
             checkArgument(!isNullOrEmpty(hostname), "The hostname should be provided!");
             checkArgument(port >= 1 && port <= 65535, "The port should be between 1 to 65535!");
             this.singleHost = hostname;
@@ -178,7 +168,7 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
             return this;
         }
 
-        public Builder<V> sentinel(@Nonnull final String masterName, final String... sentinels) {
+        public Builder sentinel(@Nonnull final String masterName, final String... sentinels) {
             checkArgument(!isNullOrEmpty(masterName), "Master name should be provided!");
             this.masterName = masterName;
             checkArgument(nonNull(sentinels), "Build without sentinel servers does not make sense!");
@@ -194,28 +184,23 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
             return this;
         }
 
-        public Builder<V> pool(@Nonnull final JedisPoolAbstract pool) {
-            checkArgument(nonNull(pool), "Build with a NULL jedis pool does not make sense!");
+        public Builder pool(@Nonnull final JedisPoolAbstract pool) {
+            checkArgument(nonNull(pool), "Wanna use a pool but passing NULL? That does not make sense!");
             this.pool = pool;
             return this;
         }
 
-        public Builder<V> setMaxTotal(final int maxTotal) {
+        public Builder setMaxTotal(final int maxTotal) {
             this.maxTotal = maxTotal;
             return this;
         }
 
-        public Builder<V> timeout(final int timeout) {
+        public Builder timeout(final int timeout) {
             this.timeout = timeout;
             return this;
         }
 
-        public Builder<V> objectMapper(@Nonnull final ObjectMapper objectMapper) {
-            this.objectMapper = objectMapper;
-            return this;
-        }
-
-        public BlockingRedisCache<V> build() {
+        public BlockingRedisCache build() {
             GenericObjectPoolConfig<?> config = new GenericObjectPoolConfig<>();
             config.setMaxTotal(maxTotal <= 0 ? DEFAULT_MAX_TOTAL : maxTotal);
             final JedisPoolAbstract pool = Optional.ofNullable(this.pool)
@@ -226,7 +211,7 @@ public class BlockingRedisCache<V> implements BlockingCache<V>, AutoCloseable {
                         }
                         return new JedisSentinelPool(masterName, sentinels, config, timeout);
                     });
-            return new BlockingRedisCache<>(pool, Optional.ofNullable(objectMapper).orElse(DEFAULT_OBJECT_MAPPER));
+            return new BlockingRedisCache(pool);
         }
 
     }

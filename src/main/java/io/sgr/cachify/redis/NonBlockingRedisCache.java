@@ -31,12 +31,12 @@ import java.util.concurrent.Executor;
 
 import javax.annotation.Nonnull;
 
-public class NonBlockingRedisCache<V> implements NonBlockingCache<V>, AutoCloseable {
+public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoCloseable {
 
-    private final BlockingRedisCache<V> delegate;
+    private final BlockingRedisCache delegate;
     private final Executor executor;
 
-    public NonBlockingRedisCache(@Nonnull final BlockingRedisCache<V> delegate, @Nonnull final Executor executor) {
+    public NonBlockingRedisCache(@Nonnull final BlockingRedisCache delegate, @Nonnull final Executor executor) {
         checkArgument(nonNull(delegate), "Missing delegate!");
         this.delegate = delegate;
         checkArgument(nonNull(executor), "Missing executor!");
@@ -45,13 +45,13 @@ public class NonBlockingRedisCache<V> implements NonBlockingCache<V>, AutoClosea
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<V>> get(@Nonnull final String key) {
+    public CompletableFuture<Optional<String>> get(@Nonnull final String key) {
         return CompletableFuture.supplyAsync(() -> delegate.get(key), executor);
     }
 
     @Nonnull
     @Override
-    public <E extends Throwable> CompletableFuture<Optional<V>> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, V, E> getter) {
+    public <E extends Throwable> CompletableFuture<Optional<String>> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return delegate.get(key, getter);
@@ -63,12 +63,12 @@ public class NonBlockingRedisCache<V> implements NonBlockingCache<V>, AutoClosea
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<V>> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
+    public CompletableFuture<Optional<String>> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, String> getter) {
         return CompletableFuture.supplyAsync(() -> delegate.uncheckedGet(key, getter), executor);
     }
 
     @Override
-    public CompletableFuture<Void> put(@Nonnull final String key, @Nonnull final V value, final long expirationInMilli) {
+    public CompletableFuture<Void> put(@Nonnull final String key, @Nonnull final String value, final long expirationInMilli) {
         return CompletableFuture.runAsync(() -> delegate.put(key, value, expirationInMilli), executor);
     }
 
