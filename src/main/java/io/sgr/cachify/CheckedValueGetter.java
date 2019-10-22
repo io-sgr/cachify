@@ -17,7 +17,9 @@
 
 package io.sgr.cachify;
 
-public interface CheckedValueGetter<K, V, E extends Throwable> {
+import java.util.function.Supplier;
+
+public interface CheckedValueGetter<K, V, E extends Exception> {
 
     V get(K key) throws E;
 

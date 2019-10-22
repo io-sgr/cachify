@@ -51,7 +51,7 @@ public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoClos
 
     @Nonnull
     @Override
-    public <E extends Throwable> CompletableFuture<Optional<String>> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) {
+    public <E extends Exception> CompletableFuture<Optional<String>> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return delegate.get(key, getter);
@@ -68,8 +68,8 @@ public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoClos
     }
 
     @Override
-    public CompletableFuture<Void> put(@Nonnull final String key, @Nonnull final String value, final long expirationInMilli) {
-        return CompletableFuture.runAsync(() -> delegate.put(key, value, expirationInMilli), executor);
+    public CompletableFuture<Void> put(@Nonnull final String key, @Nonnull final String value) {
+        return CompletableFuture.runAsync(() -> delegate.put(key, value), executor);
     }
 
     @Override

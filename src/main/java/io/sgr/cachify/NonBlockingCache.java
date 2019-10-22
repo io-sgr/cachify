@@ -47,7 +47,7 @@ public interface NonBlockingCache<V> {
      * @return A {@link CompletableFuture} to the cached object, may be empty.
      */
     @Nonnull
-    <E extends Throwable> CompletableFuture<Optional<V>> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter);
+    <E extends Exception> CompletableFuture<Optional<V>> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter);
 
     /**
      * Get an object from cache with given key, if missing will fallback to the given value getter.
@@ -69,11 +69,9 @@ public interface NonBlockingCache<V> {
      *         The cache key.
      * @param value
      *         The object to put in cache.
-     * @param expirationInMilli
-     *         The expiration time from now in milliseconds.
      * @return An void {@link CompletableFuture}.
      */
-    CompletableFuture<Void> put(@Nonnull String key, @Nonnull V value, long expirationInMilli);
+    CompletableFuture<Void> put(@Nonnull String key, @Nonnull V value);
 
     /**
      * Removes an object from cache.

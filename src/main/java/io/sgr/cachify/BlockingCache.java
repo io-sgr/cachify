@@ -48,7 +48,7 @@ public interface BlockingCache<V> {
      *         A checked exception if anything went wrong calling the value getter.
      */
     @Nonnull
-    <E extends Throwable> Optional<V> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter) throws E;
+    <E extends Exception> Optional<V> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter) throws E;
 
     /**
      * Get an object from cache with given key, if missing will fallback to the given value getter.
@@ -70,10 +70,8 @@ public interface BlockingCache<V> {
      *         The cache key.
      * @param value
      *         The object to put in cache.
-     * @param expirationInMilli
-     *         The expiration time from now in milliseconds.
      */
-    void put(@Nonnull String key, @Nonnull V value, long expirationInMilli);
+    void put(@Nonnull String key, @Nonnull V value);
 
     /**
      * Removes an object from cache.

@@ -33,18 +33,24 @@ public class BlockingRedisCacheIT {
 
     @Test
     public void testSimpleGet() {
-        final BlockingRedisCache cache = BlockingRedisCache.<String>newBuilder().singleHost(REDIS_HOST, REDIS_PORT).build();
+        final BlockingRedisCache cache = BlockingRedisCache.<String>newBuilder()
+                .singleHost(REDIS_HOST, REDIS_PORT)
+                .expiresIn(2, TimeUnit.MINUTES)
+                .build();
         Optional<String> result = cache.get("not_exist");
         assertFalse(result.isPresent());
-        cache.put("test_key", "some_value", TimeUnit.MINUTES.toMillis(2));
+        cache.put("test_key", "some_value");
         result = cache.get("not_exist");
         assertFalse(result.isPresent());
     }
 
     @Test
     public void testGetStringValue() {
-        final BlockingRedisCache cache = BlockingRedisCache.<String>newBuilder().singleHost(REDIS_HOST, REDIS_PORT).build();
-        cache.put("test_key", "some_value", TimeUnit.MINUTES.toMillis(2));
+        final BlockingRedisCache cache = BlockingRedisCache.<String>newBuilder()
+                .singleHost(REDIS_HOST, REDIS_PORT)
+                .expiresIn(2, TimeUnit.MINUTES)
+                .build();
+        cache.put("test_key", "some_value");
         Optional<String> result = cache.get("test_key");
         assertEquals("some_value", result.orElse(null));
     }

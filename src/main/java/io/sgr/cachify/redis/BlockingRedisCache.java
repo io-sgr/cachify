@@ -52,9 +52,11 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCache.class);
 
     private final JedisPoolAbstract jedisPool;
+    private final long expirationInMilli;
 
-    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool) {
+    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool, final long expirationInMilli) {
         this.jedisPool = jedisPool;
+        this.expirationInMilli = expirationInMilli;
     }
 
     public static Builder newBuilder() {
@@ -77,7 +79,7 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
 
     @Nonnull
     @Override
-    public <E extends Throwable> Optional<String> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) throws E {
+    public <E extends Exception> Optional<String> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) throws E {
         final String value = get(key).orElse(getter.get(key));
         return Optional.ofNullable(value);
     }
@@ -90,7 +92,7 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
     }
 
     @Override
-    public void put(@Nonnull final String key, @Nonnull final String value, final long expirationInMilli) {
+    public void put(@Nonnull final String key, @Nonnull final String value) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
@@ -139,11 +141,13 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
     public static class Builder {
 
         private static final int DEFAULT_MAX_TOTAL = Runtime.getRuntime().availableProcessors();
-        private static final int DEFAULT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(2);
+        private static final int DEFAULT_TIMEOUT_IN_MILLI = (int) TimeUnit.SECONDS.toMillis(2);
+        private static final long DEFAULT_EXPIRE_IN_MILLI = TimeUnit.HOURS.toDays(1);
 
         private JedisPoolAbstract pool;
         private int maxTotal;
-        private int timeout;
+        private int timeoutInMilli;
+        private long expirationInMilli;
 
         /*
          * The following fields are for single host
@@ -195,8 +199,17 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
             return this;
         }
 
-        public Builder timeout(final int timeout) {
-            this.timeout = timeout;
+        public Builder timeout(final int duration, @Nonnull final TimeUnit unit) {
+            checkArgument(duration > 0, "Timeout should be greater than zero!");
+            checkArgument(nonNull(unit), "Wanna use a customized timeout but passing NULL as the unit of time? That does not make sense!");
+            this.timeoutInMilli = (int) unit.toMillis(duration);
+            return this;
+        }
+
+        public Builder expiresIn(final long duration, @Nonnull final TimeUnit unit) {
+            checkArgument(duration > 0, "Expiration time should be greater than zero!");
+            checkArgument(nonNull(unit), "Wanna use a customized expiration but passing NULL as the unit of time? That does not make sense!");
+            this.expirationInMilli = unit.toMillis(duration);
             return this;
         }
 
@@ -205,13 +218,13 @@ public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable 
             config.setMaxTotal(maxTotal <= 0 ? DEFAULT_MAX_TOTAL : maxTotal);
             final JedisPoolAbstract pool = Optional.ofNullable(this.pool)
                     .orElseGet(() -> {
-                        final int timeout = this.timeout <= 0 ? DEFAULT_TIMEOUT : this.timeout;
+                        final int timeout = this.timeoutInMilli <= 0 ? DEFAULT_TIMEOUT_IN_MILLI : this.timeoutInMilli;
                         if (nonNull(singleHost)) {
                             return new JedisPool(config, singleHost, singleHostPort, timeout);
                         }
                         return new JedisSentinelPool(masterName, sentinels, config, timeout);
                     });
-            return new BlockingRedisCache(pool);
+            return new BlockingRedisCache(pool, expirationInMilli <= 0 ? DEFAULT_EXPIRE_IN_MILLI : expirationInMilli);
         }
 
     }
