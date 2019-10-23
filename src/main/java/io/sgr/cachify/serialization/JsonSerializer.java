@@ -20,8 +20,10 @@ package io.sgr.cachify.serialization;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.nonNull;
 
+import io.sgr.cachify.exceptions.ValueProcessingException;
 import io.sgr.cachify.utils.JsonUtil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -67,14 +69,22 @@ public class JsonSerializer<V> implements ValueSerializer<V> {
 
     @Nonnull
     @Override
-    public String serialize(@Nonnull final V value) throws IOException {
-        return objectMapper.writeValueAsString(value);
+    public String serialize(@Nonnull final V value) throws ValueProcessingException {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new ValueProcessingException(e);
+        }
     }
 
     @Nonnull
     @Override
-    public V deserialize(@Nonnull final String string) throws IOException {
-        return objectMapper.readValue(string, valueTypeRef);
+    public V deserialize(@Nonnull final String string) throws ValueProcessingException {
+        try {
+            return objectMapper.readValue(string, valueTypeRef);
+        } catch (IOException e) {
+            throw new ValueProcessingException(e);
+        }
     }
 
 }

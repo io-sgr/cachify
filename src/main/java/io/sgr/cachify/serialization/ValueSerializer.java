@@ -17,7 +17,7 @@
 
 package io.sgr.cachify.serialization;
 
-import java.io.IOException;
+import io.sgr.cachify.exceptions.ValueProcessingException;
 
 import javax.annotation.Nonnull;
 
@@ -35,11 +35,11 @@ public interface ValueSerializer<V> {
      * @param value
      *         The value. Should not be NULL because serialize NULL then put it in cache does not make sense!
      * @return The serialized string.
-     * @throws IOException
+     * @throws ValueProcessingException
      *         If something goes wrong.
      */
     @Nonnull
-    String serialize(@Nonnull V value) throws IOException;
+    String serialize(@Nonnull V value) throws ValueProcessingException;
 
     /**
      * Deserialize a value from string.
@@ -47,10 +47,10 @@ public interface ValueSerializer<V> {
      * @param string
      *         The serialized string. Should not be NULL because deserialize NULL from cache does not make sense, it should NOT been stored at all!
      * @return The value.
-     * @throws IOException
+     * @throws ValueProcessingException
      *         If something goes wrong.
      */
     @Nonnull
-    V deserialize(@Nonnull String string) throws IOException;
+    V deserialize(@Nonnull String string) throws ValueProcessingException;
 
 }

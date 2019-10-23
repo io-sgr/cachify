@@ -126,6 +126,13 @@ public class BlockingGuavaCache implements BlockingCache<String> {
             return this;
         }
 
+        public Builder expiresIn(final long milli) {
+            checkArgument(milli > 0, "Expiration time should be greater than zero!");
+            this.expirationDuration = milli;
+            this.expirationTimeUnit = TimeUnit.MILLISECONDS;
+            return this;
+        }
+
         public BlockingGuavaCache build() {
             final int maxSize = maxTotal <= 0 ? DEFAULT_MAX_TOTAL : maxTotal;
             if (isNull(expirationDuration) || isNull(expirationTimeUnit)) {
