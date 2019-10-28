@@ -36,6 +36,7 @@ public interface BlockingCache<V> {
     /**
      * Get an object from cache with given key, if missing will fallback to the given value getter.
      * The given value getter might failed to retrieve the value object and throw a checked exception.
+     * The loaded non-null value will be added into cache automatically.
      *
      * @param key
      *         The cache key.
@@ -53,6 +54,7 @@ public interface BlockingCache<V> {
     /**
      * Get an object from cache with given key, if missing will fallback to the given value getter.
      * The given value getter might failed to retrieve the value object and throw a unchecked runtime exception.
+     * The loaded non-null value will be added into cache automatically.
      *
      * @param key
      *         The cache key.
