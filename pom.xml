@@ -22,9 +22,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.sgr</groupId>
-        <artifactId>io.sgr.base</artifactId>
-        <version>1.0.8</version>
+        <groupId>io.sgr.maven</groupId>
+        <artifactId>maven-base</artifactId>
+        <version>1.1.1</version>
     </parent>
 
     <groupId>io.sgr.cachify</groupId>
