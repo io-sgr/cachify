@@ -31,7 +31,7 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-public class JsonSerializer<V> implements ValueSerializer<V> {
+public final class JsonSerializer<V> implements ValueSerializer<V> {
 
     private final TypeReference<V> valueTypeRef = new TypeReference<V>() {
     };
