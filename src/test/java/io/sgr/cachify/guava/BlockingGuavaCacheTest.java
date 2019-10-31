@@ -17,32 +17,16 @@
 
 package io.sgr.cachify.guava;
 
-import static org.junit.Assert.fail;
-
+import io.sgr.cachify.AbstractBlockingCacheTest;
 import io.sgr.cachify.BlockingCache;
 
-import org.junit.Test;
+public class BlockingGuavaCacheTest extends AbstractBlockingCacheTest {
 
-import java.io.IOException;
+    private final BlockingGuavaCache guavaCache = BlockingGuavaCache.newBuilder().build();
 
-public class BlockingGuavaCacheTest {
-
-    @Test(expected = IOException.class)
-    public void testCheckedException() throws IOException {
-        final BlockingCache<String> cache = BlockingGuavaCache.newBuilder().build();
-        cache.get("some_key", key -> {
-            throw new IOException("Just throw exception");
-        });
-        fail("Expecting exception but succeeded.");
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testUncheckedException() {
-        final BlockingCache<String> cache = BlockingGuavaCache.newBuilder().build();
-        cache.get("some_key", key -> {
-            throw new RuntimeException("Just throw exception");
-        });
-        fail("Expecting exception but succeeded.");
+    @Override
+    protected BlockingCache<String> getBlockingCache() {
+        return guavaCache;
     }
 
 }

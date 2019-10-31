@@ -27,20 +27,14 @@ import io.sgr.cachify.ValueGetter;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 
 public class BlockingGuavaCache implements BlockingCache<String> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BlockingGuavaCache.class);
 
     private final Cache<String, String> cache;
 
@@ -58,14 +52,7 @@ public class BlockingGuavaCache implements BlockingCache<String> {
     @Nonnull
     @Override
     public Optional<String> get(@Nonnull final String key) {
-        try {
-            return Optional.ofNullable(cache.get(key, () -> null));
-        } catch (ExecutionException e) {
-            LOGGER.error(e.getMessage(), e);
-        } catch (CacheLoader.InvalidCacheLoadException e) {
-            // Ignored. It's designed to do nothing after cache missed.
-        }
-        return Optional.empty();
+        return Optional.ofNullable(cache.getIfPresent(key));
     }
 
     @Nonnull
@@ -107,8 +94,8 @@ public class BlockingGuavaCache implements BlockingCache<String> {
 
     public static class Builder {
 
-        private static final int DEFAULT_MAX_TOTAL = Runtime.getRuntime().availableProcessors();
-        private static final long DEFAULT_EXPIRE_IN_MILLI = TimeUnit.HOURS.toDays(1);
+        private static final int DEFAULT_MAX_TOTAL = Integer.MAX_VALUE;
+        private static final long DEFAULT_EXPIRE_IN_MILLI = TimeUnit.HOURS.toMillis(1);
 
         private int maxTotal;
         private Long expirationDuration;
