@@ -92,6 +92,11 @@ public class BlockingGuavaCache implements BlockingCache<String> {
         return key -> key.startsWith(keyPattern);
     }
 
+    @Override
+    public void close() {
+
+    }
+
     public static class Builder {
 
         private static final int DEFAULT_MAX_TOTAL = Integer.MAX_VALUE;

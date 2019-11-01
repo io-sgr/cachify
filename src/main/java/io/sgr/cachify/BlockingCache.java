@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
-public interface BlockingCache<V> {
+public interface BlockingCache<V> extends AutoCloseable {
 
     /**
      * Get an object from cache with given key.

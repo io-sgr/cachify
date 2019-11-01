@@ -15,11 +15,12 @@
  *
  */
 
-package io.sgr.cachify.redis;
+package io.sgr.cachify.wrappers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.nonNull;
 
+import io.sgr.cachify.BlockingCache;
 import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.NonBlockingCache;
 import io.sgr.cachify.ValueGetter;
@@ -31,12 +32,12 @@ import java.util.concurrent.Executor;
 
 import javax.annotation.Nonnull;
 
-public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoCloseable {
+public class DefaultNonBlockingCache implements NonBlockingCache<String> {
 
-    private final BlockingRedisCache delegate;
+    private final BlockingCache<String> delegate;
     private final Executor executor;
 
-    public NonBlockingRedisCache(@Nonnull final BlockingRedisCache delegate, @Nonnull final Executor executor) {
+    public DefaultNonBlockingCache(@Nonnull final BlockingCache<String> delegate, @Nonnull final Executor executor) {
         checkArgument(nonNull(delegate), "Missing delegate!");
         this.delegate = delegate;
         checkArgument(nonNull(executor), "Missing executor!");
@@ -51,7 +52,9 @@ public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoClos
 
     @Nonnull
     @Override
-    public <E extends Exception> CompletableFuture<Optional<String>> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) {
+    public <E extends Exception> CompletableFuture<Optional<String>> get(
+            @Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter
+    ) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return delegate.get(key, getter);
@@ -83,7 +86,7 @@ public class NonBlockingRedisCache implements NonBlockingCache<String>, AutoClos
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         delegate.close();
     }
 

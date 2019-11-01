@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
-public class BlockingRedisCache implements BlockingCache<String>, AutoCloseable {
+public class BlockingRedisCache implements BlockingCache<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCache.class);
 

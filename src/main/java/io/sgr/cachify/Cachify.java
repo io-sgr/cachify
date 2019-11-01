@@ -96,6 +96,11 @@ public final class Cachify<V> implements BlockingCache<V> {
         backend.bulkEvict(keyGenerator.generate(cacheName, keyPattern));
     }
 
+    @Override
+    public void close() throws Exception {
+        this.backend.close();
+    }
+
 
     public static final class Builder<V> {
 

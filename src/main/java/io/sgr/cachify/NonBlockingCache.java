@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
-public interface NonBlockingCache<V> {
+public interface NonBlockingCache<V> extends AutoCloseable {
 
     /**
      * Get an object from cache with given key.
