@@ -25,6 +25,7 @@ import static java.util.Objects.nonNull;
 import io.sgr.cachify.generator.KeyGenerator;
 import io.sgr.cachify.generator.SimpleKeyGenerator;
 import io.sgr.cachify.guava.BlockingGuavaCache;
+import io.sgr.cachify.serialization.JsonSerializer;
 import io.sgr.cachify.serialization.ValueSerializer;
 import io.sgr.cachify.wrappers.TieredBlockingCache;
 
@@ -42,21 +43,26 @@ public final class Cachify<V> implements BlockingCache<V> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Cachify.class);
 
     private final String cacheName;
-    private final BlockingCache<V> backend;
     private final KeyGenerator keyGenerator;
+    private final ValueSerializer<V> serializer;
+    private final BlockingCache<String> backend;
 
     private Cachify(
             @Nonnull final String cacheName,
-            @Nonnull final BlockingCache<V> backend,
-            @Nullable final KeyGenerator keyGenerator
-    ) {
+            @Nullable final KeyGenerator keyGenerator, @Nullable final ValueSerializer<V> serializer,
+            @Nonnull final BlockingCache<String> backend) {
         this.cacheName = cacheName;
-        this.backend = backend;
         this.keyGenerator = Optional.ofNullable(keyGenerator)
                 .orElseGet(() -> {
                     LOGGER.warn("No key generator specified, using default: {}", SimpleKeyGenerator.class);
                     return SimpleKeyGenerator.getInstance();
                 });
+        this.serializer = Optional.ofNullable(serializer)
+                .orElseGet(() -> {
+                    LOGGER.warn("No serializer specified, using default: {}", JsonSerializer.class);
+                    return JsonSerializer.getDefault();
+                });
+        this.backend = backend;
     }
 
     public static <V> Builder<V> register(@Nonnull final String cacheName) {
@@ -66,7 +72,7 @@ public final class Cachify<V> implements BlockingCache<V> {
     @Nonnull
     @Override
     public Optional<V> get(@Nonnull final String key) {
-        return backend.get(keyGenerator.generate(cacheName, key));
+        return backend.get(keyGenerator.generate(cacheName, key)).map(serializer::deserialize);
     }
 
     @Nonnull
@@ -85,7 +91,7 @@ public final class Cachify<V> implements BlockingCache<V> {
 
     @Override
     public void put(@Nonnull final String key, @Nonnull final V value) {
-        backend.put(keyGenerator.generate(cacheName, key), value);
+        backend.put(keyGenerator.generate(cacheName, key), serializer.serialize(value));
     }
 
     @Override
@@ -110,7 +116,7 @@ public final class Cachify<V> implements BlockingCache<V> {
 
         private final String name;
 
-        private BlockingCache<V> backend = null;
+        private BlockingCache<String> backend = null;
         private KeyGenerator keyGenerator = null;
         private ValueSerializer<V> serializer = null;
         private Long valueExpiresInMilli = null;
@@ -127,7 +133,7 @@ public final class Cachify<V> implements BlockingCache<V> {
          * @param backend
          * @return
          */
-        public Builder<V> backend(@Nonnull final BlockingCache<V> backend) {
+        public Builder<V> backend(@Nonnull final BlockingCache<String> backend) {
             checkArgument(nonNull(backend), "Wanna use a specified cache backend but just passed NULL, that does not make sense!");
             this.backend = backend;
             return this;
@@ -197,31 +203,30 @@ public final class Cachify<V> implements BlockingCache<V> {
         @Nonnull
         public BlockingCache<V> build() {
             if (isNull(backend)) {
-                return buildInMemoryCache(name, keyGenerator, serializer, valueExpiresInMilli);
+                final long milli = Optional.ofNullable(valueExpiresInMilli)
+                        .orElseGet(() -> {
+                            LOGGER.warn("No expiration time for value been provided, using default {}ms", DEFAULT_VALUE_EXPIRES_IN_MILLI);
+                            return DEFAULT_VALUE_EXPIRES_IN_MILLI;
+                        });
+                final BlockingGuavaCache inMemoryCache = BlockingGuavaCache.newBuilder().expiresIn(milli).build();
+                return new Cachify<>(name, keyGenerator, serializer, inMemoryCache);
             }
             if (useInMemoryL2Cache) {
-                final BlockingCache<V> inMemoryCache = buildInMemoryCache(name, keyGenerator, serializer, lv2ExpiresInMilli);
-                return new TieredBlockingCache<>(inMemoryCache, new Cachify<>(name, backend, keyGenerator));
+                final long milli = Optional.ofNullable(lv2ExpiresInMilli)
+                        .orElseGet(() -> {
+                            LOGGER.warn("No expiration time for value been provided, using default {}ms", DEFAULT_VALUE_EXPIRES_IN_MILLI);
+                            return DEFAULT_VALUE_EXPIRES_IN_MILLI;
+                        });
+                final BlockingGuavaCache inMemoryCache = BlockingGuavaCache.newBuilder().expiresIn(milli).build();
+                final TieredBlockingCache<String> tieredCache = new TieredBlockingCache<>(inMemoryCache, this.backend);
+                return new Cachify<>(name, keyGenerator, serializer, tieredCache);
             }
             Optional.ofNullable(valueExpiresInMilli)
                     .ifPresent(expiration -> {
                         final String template = "Building cache with provided backend, given value expiration time '{}ms' will be ignored.";
                         LOGGER.warn(template, expiration);
                     });
-            return new Cachify<>(name, backend, keyGenerator);
-        }
-
-        @Nonnull
-        private BlockingCache<V> buildInMemoryCache(
-                final String name, final KeyGenerator keyGenerator, final ValueSerializer<V> serializer, final Long valueExpiresInMilli
-        ) {
-            final long milli = Optional.ofNullable(valueExpiresInMilli)
-                    .orElseGet(() -> {
-                        LOGGER.warn("No expiration time for value been provided, using default {}ms", DEFAULT_VALUE_EXPIRES_IN_MILLI);
-                        return DEFAULT_VALUE_EXPIRES_IN_MILLI;
-                    });
-            final BlockingGuavaCache<V> guavaCache = BlockingGuavaCache.<V>newBuilder().serializer(serializer).expiresIn(milli).build();
-            return new Cachify<>(name, guavaCache, keyGenerator);
+            return new Cachify<>(name, keyGenerator, serializer, backend);
         }
     }
 

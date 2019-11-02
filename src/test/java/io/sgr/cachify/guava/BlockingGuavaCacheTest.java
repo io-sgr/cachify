@@ -19,11 +19,10 @@ package io.sgr.cachify.guava;
 
 import io.sgr.cachify.AbstractBlockingCacheTest;
 import io.sgr.cachify.BlockingCache;
-import io.sgr.cachify.serialization.NoOpSerializer;
 
 public class BlockingGuavaCacheTest extends AbstractBlockingCacheTest {
 
-    private final BlockingGuavaCache<String> guavaCache = BlockingGuavaCache.<String>newBuilder().serializer(NoOpSerializer.getInstance()).build();
+    private final BlockingGuavaCache guavaCache = BlockingGuavaCache.newBuilder().build();
 
     @Override
     protected BlockingCache<String> getBlockingCache() {

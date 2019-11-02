@@ -25,7 +25,6 @@ import static redis.clients.jedis.ScanParams.SCAN_POINTER_START;
 import io.sgr.cachify.BlockingCache;
 import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.ValueGetter;
-import io.sgr.cachify.serialization.ValueSerializer;
 
 import com.google.common.base.Strings;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -48,34 +47,30 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
-public final class BlockingRedisCache<V> implements BlockingCache<V> {
+public final class BlockingRedisCache implements BlockingCache<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCache.class);
 
     private final JedisPoolAbstract jedisPool;
     private final long expirationInMilli;
-    private final ValueSerializer<V> serializer;
 
-    private BlockingRedisCache(
-            @Nonnull final JedisPoolAbstract jedisPool, final long expirationInMilli,
-            @Nonnull final ValueSerializer<V> serializer) {
+    private BlockingRedisCache(@Nonnull final JedisPoolAbstract jedisPool, final long expirationInMilli) {
         this.jedisPool = jedisPool;
         this.expirationInMilli = expirationInMilli;
-        this.serializer = serializer;
     }
 
-    public static <V> Builder<V> newBuilder() {
-        return new Builder<>();
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     @Nonnull
     @Override
-    public Optional<V> get(@Nonnull final String key) {
+    public Optional<String> get(@Nonnull final String key) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
             final String result = jedis.get(key);
-            return Optional.ofNullable(result).map(Strings::emptyToNull).map(serializer::deserialize);
+            return Optional.ofNullable(result).map(Strings::emptyToNull);
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             return Optional.empty();
@@ -84,28 +79,28 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
 
     @Nonnull
     @Override
-    public <E extends Exception> Optional<V> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, V, E> getter) throws E {
-        final V value = get(key).orElse(getter.get(key));
-        final Optional<V> result = Optional.ofNullable(value);
+    public <E extends Exception> Optional<String> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) throws E {
+        final String value = get(key).orElse(getter.get(key));
+        final Optional<String> result = Optional.ofNullable(value);
         result.ifPresent(v -> put(key, v));
         return result;
     }
 
     @Nonnull
     @Override
-    public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
-        final V value = get(key).orElse(getter.get(key));
-        final Optional<V> result = Optional.ofNullable(value);
+    public Optional<String> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, String> getter) {
+        final String value = get(key).orElse(getter.get(key));
+        final Optional<String> result = Optional.ofNullable(value);
         result.ifPresent(v -> put(key, v));
         return result;
     }
 
     @Override
-    public void put(@Nonnull final String key, @Nonnull final V value) {
+    public void put(@Nonnull final String key, @Nonnull final String value) {
         try (
                 Jedis jedis = jedisPool.getResource()
         ) {
-            jedis.set(key, serializer.serialize(value), SetParams.setParams().px(expirationInMilli));
+            jedis.set(key, value, SetParams.setParams().px(expirationInMilli));
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -147,7 +142,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
     }
 
 
-    public static class Builder<V> {
+    public static class Builder {
 
         static final int DEFAULT_MAX_TOTAL = Integer.MAX_VALUE;
         static final int DEFAULT_TIMEOUT_IN_MILLI = (int) TimeUnit.SECONDS.toMillis(2);
@@ -170,8 +165,6 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
         private String masterName;
         private Set<String> sentinels;
 
-        private ValueSerializer<V> serializer = null;
-
         private Builder() {
         }
 
@@ -181,7 +174,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          * @param port
          * @return The builder.
          */
-        public Builder<V> singleHost(@Nonnull final String hostname, final int port) {
+        public Builder singleHost(@Nonnull final String hostname, final int port) {
             checkArgument(!isNullOrEmpty(hostname), "The hostname should be provided!");
             checkArgument(port >= 1 && port <= 65535, "The port should be between 1 to 65535!");
             this.singleHost = hostname;
@@ -195,7 +188,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          * @param sentinels
          * @return The builder.
          */
-        public Builder<V> sentinel(@Nonnull final String masterName, final String... sentinels) {
+        public Builder sentinel(@Nonnull final String masterName, final String... sentinels) {
             checkArgument(!isNullOrEmpty(masterName), "Master name should be provided!");
             this.masterName = masterName;
             checkArgument(nonNull(sentinels), "Build without sentinel servers does not make sense!");
@@ -216,7 +209,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          * @param pool
          * @return The builder.
          */
-        public Builder<V> pool(@Nonnull final JedisPoolAbstract pool) {
+        public Builder pool(@Nonnull final JedisPoolAbstract pool) {
             checkArgument(nonNull(pool), "Wanna use a pool but passing NULL? That does not make sense!");
             this.pool = pool;
             return this;
@@ -229,7 +222,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          *         the maximum elements to keep in memory.
          * @return The builder.
          */
-        public Builder<V> setMaxTotal(final int maxTotal) {
+        public Builder setMaxTotal(final int maxTotal) {
             this.maxTotal = maxTotal;
             return this;
         }
@@ -242,7 +235,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          *         The time unit of duration.
          * @return The builder.
          */
-        public Builder<V> timeout(final int duration, @Nonnull final TimeUnit unit) {
+        public Builder timeout(final int duration, @Nonnull final TimeUnit unit) {
             checkArgument(duration > 0, "Timeout should be greater than zero!");
             checkArgument(nonNull(unit), "Wanna use a customized timeout but passing NULL as the unit of time? That does not make sense!");
             this.timeoutInMilli = (int) unit.toMillis(duration);
@@ -258,23 +251,10 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          *         The time unit of duration.
          * @return The builder.
          */
-        public Builder<V> expiresIn(final long duration, @Nonnull final TimeUnit unit) {
+        public Builder expiresIn(final long duration, @Nonnull final TimeUnit unit) {
             checkArgument(duration > 0, "Expiration time should be greater than zero!");
             checkArgument(nonNull(unit), "Wanna use a customized expiration but passing NULL as the unit of time? That does not make sense!");
             this.expirationInMilli = unit.toMillis(duration);
-            return this;
-        }
-
-        /**
-         * Set a value serializer to help convert Java object to the format that supported by cache implementation.
-         *
-         * @param serializer
-         *         The serializer.
-         * @return The builder.
-         */
-        public Builder<V> serializer(@Nonnull final ValueSerializer<V> serializer) {
-            checkArgument(nonNull(serializer), "Wanna use a customized serializer but passing NULL? That does not make sense!");
-            this.serializer = serializer;
             return this;
         }
 
@@ -284,7 +264,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
          * @return The cache.
          */
         @Nonnull
-        public BlockingRedisCache<V> build() {
+        public BlockingRedisCache build() {
             GenericObjectPoolConfig<?> config = new GenericObjectPoolConfig<>();
             config.setMaxTotal(maxTotal <= 0 ? DEFAULT_MAX_TOTAL : maxTotal);
             final JedisPoolAbstract pool = Optional.ofNullable(this.pool)
@@ -295,7 +275,7 @@ public final class BlockingRedisCache<V> implements BlockingCache<V> {
                         }
                         return new JedisSentinelPool(masterName, sentinels, config, timeout);
                     });
-            return new BlockingRedisCache<>(pool, expirationInMilli <= 0 ? DEFAULT_VALUE_EXPIRES_IN_MILLI : expirationInMilli, serializer);
+            return new BlockingRedisCache(pool, expirationInMilli <= 0 ? DEFAULT_VALUE_EXPIRES_IN_MILLI : expirationInMilli);
         }
 
     }
