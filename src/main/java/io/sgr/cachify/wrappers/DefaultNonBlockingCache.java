@@ -37,6 +37,14 @@ public class DefaultNonBlockingCache implements NonBlockingCache<String> {
     private final BlockingCache<String> delegate;
     private final Executor executor;
 
+    /**
+     * Construct an non-blocking cache.
+     *
+     * @param delegate
+     *         A backend blocking cache.
+     * @param executor
+     *         A executor.
+     */
     public DefaultNonBlockingCache(@Nonnull final BlockingCache<String> delegate, @Nonnull final Executor executor) {
         checkArgument(nonNull(delegate), "Missing delegate!");
         this.delegate = delegate;
