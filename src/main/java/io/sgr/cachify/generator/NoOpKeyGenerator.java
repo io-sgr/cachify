@@ -23,13 +23,13 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import javax.annotation.Nonnull;
 
 /**
- * A very simple key generator which combines cache name and given key string using ':'.
+ * No-operation generator which returns the given key directly.
  */
-public final class SimpleKeyGenerator implements KeyGenerator {
+public final class NoOpKeyGenerator implements KeyGenerator {
 
-    private static final KeyGenerator INSTANCE = new SimpleKeyGenerator();
+    private static final KeyGenerator INSTANCE = new NoOpKeyGenerator();
 
-    private SimpleKeyGenerator() {
+    private NoOpKeyGenerator() {
 
     }
 
@@ -45,8 +45,7 @@ public final class SimpleKeyGenerator implements KeyGenerator {
     @Nonnull
     @Override
     public String generate(@Nonnull final String cacheName, @Nonnull final String key) {
-        checkArgument(!isNullOrEmpty(cacheName), "Missing cache name!");
         checkArgument(!isNullOrEmpty(key), "Missing key!");
-        return String.format("%s:%s", cacheName, key);
+        return key;
     }
 }

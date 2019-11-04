@@ -23,7 +23,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import io.sgr.cachify.generator.KeyGenerator;
-import io.sgr.cachify.generator.SimpleKeyGenerator;
+import io.sgr.cachify.generator.NoOpKeyGenerator;
 import io.sgr.cachify.guava.BlockingGuavaCache;
 import io.sgr.cachify.serialization.JsonSerializer;
 import io.sgr.cachify.serialization.ValueSerializer;
@@ -54,8 +54,8 @@ public final class Cachify<V> implements BlockingCache<V> {
         this.cacheName = cacheName;
         this.keyGenerator = Optional.ofNullable(keyGenerator)
                 .orElseGet(() -> {
-                    LOGGER.warn("No key generator specified, using default: {}", SimpleKeyGenerator.class);
-                    return SimpleKeyGenerator.getInstance();
+                    LOGGER.warn("No key generator specified, using default: {}", NoOpKeyGenerator.class);
+                    return NoOpKeyGenerator.getInstance();
                 });
         this.serializer = Optional.ofNullable(serializer)
                 .orElseGet(() -> {
