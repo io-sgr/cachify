@@ -45,10 +45,8 @@ public final class JsonSerializer<V> implements ValueSerializer<V> {
     /**
      * Build JSON serializer with given object mapper.
      *
-     * @param objectMapper
-     *         The object mapper.
-     * @param <V>
-     *         The type of object.
+     * @param objectMapper The object mapper.
+     * @param <V> The type of object.
      * @return The serializer.
      */
     public static <V> JsonSerializer<V> using(@Nonnull final ObjectMapper objectMapper) {
@@ -59,8 +57,7 @@ public final class JsonSerializer<V> implements ValueSerializer<V> {
     /**
      * Build default JSON serializer with default object mapper from {@link JsonUtil#getObjectMapper()}.
      *
-     * @param <V>
-     *         The type of object.
+     * @param <V> The type of object.
      * @return The serializer.
      */
     public static <V> JsonSerializer<V> getDefault() {

@@ -24,19 +24,16 @@ import javax.annotation.Nonnull;
 /**
  * An interface for user to serialize an object to string and also backward.
  *
- * @param <V>
- *         The type of value.
+ * @param <V> The type of value.
  */
 public interface ValueSerializer<V> {
 
     /**
      * Serialize a value to string.
      *
-     * @param value
-     *         The value. Should not be NULL because serialize NULL then put it in cache does not make sense!
+     * @param value The value. Should not be NULL because serialize NULL then put it in cache does not make sense!
      * @return The serialized string.
-     * @throws ValueProcessingException
-     *         If something goes wrong.
+     * @throws ValueProcessingException If something goes wrong.
      */
     @Nonnull
     String serialize(@Nonnull V value) throws ValueProcessingException;
@@ -44,11 +41,9 @@ public interface ValueSerializer<V> {
     /**
      * Deserialize a value from string.
      *
-     * @param string
-     *         The serialized string. Should not be NULL because deserialize NULL from cache does not make sense, it should NOT been stored at all!
+     * @param string The serialized string. Should not be NULL because deserialize NULL from cache does not make sense, it should NOT been stored at all!
      * @return The value.
-     * @throws ValueProcessingException
-     *         If something goes wrong.
+     * @throws ValueProcessingException If something goes wrong.
      */
     @Nonnull
     V deserialize(@Nonnull String string) throws ValueProcessingException;

@@ -129,9 +129,10 @@ public final class Cachify<V> implements BlockingCache<V> {
         }
 
         /**
+         * Build cache with a backend cache implementation like redis.
          *
-         * @param backend
-         * @return
+         * @param backend The backend cache implementation.
+         * @return The builder.
          */
         public Builder<V> backend(@Nonnull final BlockingCache<String> backend) {
             checkArgument(nonNull(backend), "Wanna use a specified cache backend but just passed NULL, that does not make sense!");
@@ -140,9 +141,10 @@ public final class Cachify<V> implements BlockingCache<V> {
         }
 
         /**
+         * Build cache with a key generator. Typical use case include add version number automatically in the key.
          *
-         * @param keyGenerator
-         * @return
+         * @param keyGenerator The key generator.
+         * @return The builder.
          */
         public Builder<V> keyGenerator(@Nonnull final KeyGenerator keyGenerator) {
             checkArgument(nonNull(keyGenerator), "Wanna use key generator but just passed NULL, that does not make sense!");
@@ -153,8 +155,7 @@ public final class Cachify<V> implements BlockingCache<V> {
         /**
          * Set a value serializer to help convert Java object to the format that supported by cache implementation.
          *
-         * @param serializer
-         *         The serializer.
+         * @param serializer The serializer.
          * @return The builder.
          */
         public Builder<V> serializer(@Nonnull final ValueSerializer<V> serializer) {
@@ -166,10 +167,8 @@ public final class Cachify<V> implements BlockingCache<V> {
         /**
          * Set element expiration time, default to {@link Builder#DEFAULT_VALUE_EXPIRES_IN_MILLI}.
          *
-         * @param duration
-         *         The duration, should be grater than 0.
-         * @param unit
-         *         The time unit of duration.
+         * @param duration The duration, should be grater than 0.
+         * @param unit The time unit of duration.
          * @return The builder.
          */
         public Builder<V> valueExpiresIn(final long duration, @Nonnull final TimeUnit unit) {
@@ -180,11 +179,10 @@ public final class Cachify<V> implements BlockingCache<V> {
         }
 
         /**
+         * Build cache with a in-memory level 2 cache.
          *
-         * @param duration
-         *         The duration, should be grater than 0.
-         * @param unit
-         *         The time unit of duration.
+         * @param duration The duration, should be grater than 0.
+         * @param unit The time unit of duration.
          * @return The builder.
          */
         public Builder<V> useInMemoryL2Cache(final long duration, @Nonnull final TimeUnit unit) {

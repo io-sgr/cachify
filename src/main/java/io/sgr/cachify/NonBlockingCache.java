@@ -27,36 +27,30 @@ public interface NonBlockingCache<V> extends AutoCloseable {
     /**
      * Get an object from cache with given key.
      *
-     * @param key
-     *         The cache key.
+     * @param key The cache key.
      * @return A {@link CompletableFuture} to the cached object, may be empty.
      */
     @Nonnull
     CompletableFuture<Optional<V>> get(@Nonnull String key);
 
     /**
-     * Get an object from cache with given key, if missing will fallback to the given value getter.
-     * The given value getter might failed to retrieve the value object and throw a checked exception.
+     * Get an object from cache with given key, if missing will fallback to the given value getter. The given value getter might failed to retrieve the value
+     * object and throw a checked exception.
      *
-     * @param key
-     *         The cache key.
-     * @param getter
-     *         The fallback value getter.
-     * @param <E>
-     *         Describes the type of potential checked exception through by the value getter.
+     * @param key The cache key.
+     * @param getter The fallback value getter.
+     * @param <E> Describes the type of potential checked exception through by the value getter.
      * @return A {@link CompletableFuture} to the cached object, may be empty.
      */
     @Nonnull
     <E extends Exception> CompletableFuture<Optional<V>> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter);
 
     /**
-     * Get an object from cache with given key, if missing will fallback to the given value getter.
-     * The given value getter might failed to retrieve the value object and throw a unchecked runtime exception.
+     * Get an object from cache with given key, if missing will fallback to the given value getter. The given value getter might failed to retrieve the value
+     * object and throw a unchecked runtime exception.
      *
-     * @param key
-     *         The cache key.
-     * @param getter
-     *         The fallback value getter.
+     * @param key The cache key.
+     * @param getter The fallback value getter.
      * @return A {@link CompletableFuture} to the cached object, may be empty.
      */
     @Nonnull
@@ -65,10 +59,8 @@ public interface NonBlockingCache<V> extends AutoCloseable {
     /**
      * Put an object in cache with given expiration.
      *
-     * @param key
-     *         The cache key.
-     * @param value
-     *         The object to put in cache.
+     * @param key The cache key.
+     * @param value The object to put in cache.
      * @return An void {@link CompletableFuture}.
      */
     CompletableFuture<Void> put(@Nonnull String key, @Nonnull V value);
@@ -76,8 +68,7 @@ public interface NonBlockingCache<V> extends AutoCloseable {
     /**
      * Removes an object from cache.
      *
-     * @param key
-     *         The cache key.
+     * @param key The cache key.
      * @return An void {@link CompletableFuture}.
      */
     CompletableFuture<Void> evict(@Nonnull String key);
@@ -85,8 +76,7 @@ public interface NonBlockingCache<V> extends AutoCloseable {
     /**
      * Bulk remove object from cache using a given prefix of key.
      *
-     * @param keyPattern
-     *         The pattern of key.
+     * @param keyPattern The pattern of key.
      * @return An void {@link CompletableFuture}.
      */
     CompletableFuture<Void> bulkEvict(@Nonnull String keyPattern);

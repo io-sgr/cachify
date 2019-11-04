@@ -25,14 +25,11 @@ import javax.annotation.Nonnull;
 public interface KeyGenerator {
 
     /**
-     * Generate a new globally unique key to store data in cache.
-     * We recommend to include name of the cache in your algorithm to avoid key conflict because sometime multiple components are sharing same cache backend,
-     * you thought a UUID should be globally unique, others thought so too.
+     * Generate a new globally unique key to store data in cache. We recommend to include name of the cache in your algorithm to avoid key conflict because
+     * sometime multiple components are sharing same cache backend, you thought a UUID should be globally unique, others thought so too.
      *
-     * @param cacheName
-     *         The name of the cache which this generator will work with.
-     * @param key
-     *         The original key or pattern of key in bulk operations.
+     * @param cacheName The name of the cache which this generator will work with.
+     * @param key The original key or pattern of key in bulk operations.
      * @return A generated globally unique key.
      */
     @Nonnull

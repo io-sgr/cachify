@@ -20,10 +20,8 @@ package io.sgr.cachify;
 /**
  * No-operation value getter, which returns NULL directly.
  *
- * @param <K>
- *         Describes the type of key.
- * @param <V>
- *         Describes the type of value.
+ * @param <K> Describes the type of key.
+ * @param <V> Describes the type of value.
  */
 public class NoOpValueGetter<K, V> implements ValueGetter<K, V> {
 

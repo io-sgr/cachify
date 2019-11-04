@@ -36,10 +36,8 @@ public class TieredBlockingCache<V> implements BlockingCache<V> {
     /**
      * Construct a tiered blocking cache. If cache missed in primary cache, then try secondary.
      *
-     * @param primary
-     *         The primary cache.
-     * @param secondary
-     *         The secondary cache.
+     * @param primary The primary cache.
+     * @param secondary The secondary cache.
      */
     public TieredBlockingCache(@Nonnull final BlockingCache<V> primary, final BlockingCache<V> secondary) {
         checkArgument(nonNull(primary), "Missing primary cache!");

@@ -59,6 +59,11 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         this.expirationInMilli = expirationInMilli;
     }
 
+    /**
+     * Create a new builder.
+     *
+     * @return The builder.
+     */
     public static Builder newBuilder() {
         return new Builder();
     }
@@ -169,9 +174,10 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         }
 
         /**
+         * Configure redis cache with single host server.
          *
-         * @param hostname
-         * @param port
+         * @param hostname The hostname.
+         * @param port The port.
          * @return The builder.
          */
         public Builder singleHost(@Nonnull final String hostname, final int port) {
@@ -183,9 +189,10 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         }
 
         /**
+         * Configure redis cache with sentinels.
          *
-         * @param masterName
-         * @param sentinels
+         * @param masterName The master.
+         * @param sentinels Sentinels.
          * @return The builder.
          */
         public Builder sentinel(@Nonnull final String masterName, final String... sentinels) {
@@ -205,8 +212,9 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         }
 
         /**
+         * Build with given jedis pool.
          *
-         * @param pool
+         * @param pool The given jedis pool.
          * @return The builder.
          */
         public Builder pool(@Nonnull final JedisPoolAbstract pool) {
@@ -218,8 +226,7 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         /**
          * Set the number of maximum elements to keep in memory, default to {@link Builder#DEFAULT_MAX_TOTAL}.
          *
-         * @param maxTotal
-         *         the maximum elements to keep in memory.
+         * @param maxTotal The maximum elements to keep in memory.
          * @return The builder.
          */
         public Builder setMaxTotal(final int maxTotal) {
@@ -228,11 +235,10 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         }
 
         /**
+         * The connection timeout, default to {@link Builder#DEFAULT_TIMEOUT_IN_MILLI}.
          *
-         * @param duration
-         *         The duration, should be grater than 0.
-         * @param unit
-         *         The time unit of duration.
+         * @param duration The duration, should be grater than 0.
+         * @param unit The time unit of duration.
          * @return The builder.
          */
         public Builder timeout(final int duration, @Nonnull final TimeUnit unit) {
@@ -245,10 +251,8 @@ public final class BlockingRedisCache implements BlockingCache<String> {
         /**
          * Set element expiration time, default to {@link Builder#DEFAULT_VALUE_EXPIRES_IN_MILLI}.
          *
-         * @param duration
-         *         The duration, should be grater than 0.
-         * @param unit
-         *         The time unit of duration.
+         * @param duration The duration, should be grater than 0.
+         * @param unit The time unit of duration.
          * @return The builder.
          */
         public Builder expiresIn(final long duration, @Nonnull final TimeUnit unit) {

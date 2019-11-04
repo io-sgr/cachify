@@ -26,40 +26,31 @@ public interface BlockingCache<V> extends AutoCloseable {
     /**
      * Get an object from cache with given key.
      *
-     * @param key
-     *         The cache key.
+     * @param key The cache key.
      * @return An cached object, may be empty.
      */
     @Nonnull
     Optional<V> get(@Nonnull String key);
 
     /**
-     * Get an object from cache with given key, if missing will fallback to the given value getter.
-     * The given value getter might failed to retrieve the value object and throw a checked exception.
-     * The loaded non-null value will be added into cache automatically.
+     * Get an object from cache with given key, if missing will fallback to the given value getter. The given value getter might failed to retrieve the value
+     * object and throw a checked exception. The loaded non-null value will be added into cache automatically.
      *
-     * @param key
-     *         The cache key.
-     * @param getter
-     *         The fallback value getter.
-     * @param <E>
-     *         Describes the type of potential checked exception through by the value getter.
+     * @param key The cache key.
+     * @param getter The fallback value getter.
+     * @param <E> Describes the type of potential checked exception through by the value getter.
      * @return An cached object, may be empty.
-     * @throws E
-     *         A checked exception if anything went wrong calling the value getter.
+     * @throws E A checked exception if anything went wrong calling the value getter.
      */
     @Nonnull
     <E extends Exception> Optional<V> get(@Nonnull String key, @Nonnull CheckedValueGetter<String, V, E> getter) throws E;
 
     /**
-     * Get an object from cache with given key, if missing will fallback to the given value getter.
-     * The given value getter might failed to retrieve the value object and throw a unchecked runtime exception.
-     * The loaded non-null value will be added into cache automatically.
+     * Get an object from cache with given key, if missing will fallback to the given value getter. The given value getter might failed to retrieve the value
+     * object and throw a unchecked runtime exception. The loaded non-null value will be added into cache automatically.
      *
-     * @param key
-     *         The cache key.
-     * @param getter
-     *         The fallback value getter.
+     * @param key The cache key.
+     * @param getter The fallback value getter.
      * @return An cached object, may be empty.
      */
     @Nonnull
@@ -68,26 +59,22 @@ public interface BlockingCache<V> extends AutoCloseable {
     /**
      * Put an object in cache with given expiration.
      *
-     * @param key
-     *         The cache key.
-     * @param value
-     *         The object to put in cache.
+     * @param key The cache key.
+     * @param value The object to put in cache.
      */
     void put(@Nonnull String key, @Nonnull V value);
 
     /**
      * Removes an object from cache.
      *
-     * @param key
-     *         The cache key.
+     * @param key The cache key.
      */
     void evict(@Nonnull String key);
 
     /**
      * Bulk remove object from cache using a given prefix of key.
      *
-     * @param keyPattern
-     *         The pattern of key.
+     * @param keyPattern The pattern of key.
      */
     void bulkEvict(@Nonnull String keyPattern);
 

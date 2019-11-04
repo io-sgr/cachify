@@ -27,8 +27,6 @@ import io.sgr.cachify.ValueGetter;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +35,6 @@ import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 
 public final class BlockingGuavaCache implements BlockingCache<String> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BlockingGuavaCache.class);
 
     private final Cache<String, String> cache;
 
@@ -53,6 +49,10 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
 
     public static Builder newBuilder() {
         return new Builder();
+    }
+
+    private static Predicate<String> matchPattern(@Nonnull final String keyPattern) {
+        return key -> key.startsWith(keyPattern);
     }
 
     @Nonnull
@@ -94,10 +94,6 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
         cache.invalidateAll((Iterable<String>) () -> cache.asMap().keySet().stream().filter(matchPattern(keyPattern)).iterator());
     }
 
-    private static Predicate<String> matchPattern(@Nonnull final String keyPattern) {
-        return key -> key.startsWith(keyPattern);
-    }
-
     @Override
     public void close() {
 
@@ -118,8 +114,7 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
         /**
          * Set the number of maximum elements to keep in memory, default to {@link Builder#DEFAULT_MAX_TOTAL}.
          *
-         * @param maxTotal
-         *         the maximum elements to keep in memory.
+         * @param maxTotal the maximum elements to keep in memory.
          * @return The builder.
          */
         public Builder setMaxTotal(final int maxTotal) {
@@ -130,10 +125,8 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
         /**
          * Set element expiration time, default to {@link Builder#DEFAULT_VALUE_EXPIRES_IN_MILLI}.
          *
-         * @param duration
-         *         The duration, should be grater than 0.
-         * @param unit
-         *         The time unit of duration.
+         * @param duration The duration, should be grater than 0.
+         * @param unit The time unit of duration.
          * @return The builder.
          */
         public Builder expiresIn(final long duration, @Nonnull final TimeUnit unit) {
@@ -147,8 +140,7 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
         /**
          * Set element expiration time, default to {@link Builder#DEFAULT_VALUE_EXPIRES_IN_MILLI}.
          *
-         * @param milli
-         *         expiration time in millisecond, should be greater than 0.
+         * @param milli expiration time in millisecond, should be greater than 0.
          * @return The builder.
          */
         public Builder expiresIn(final long milli) {

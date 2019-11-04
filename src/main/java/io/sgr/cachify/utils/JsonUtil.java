@@ -62,13 +62,10 @@ public class JsonUtil {
     /**
      * Convert a object to JSON string.
      *
-     * @param object
-     *         The object to convert.
-     * @param <T>
-     *         The type of object
+     * @param object The object to convert.
+     * @param <T> The type of object
      * @return The JSON string
-     * @throws IllegalArgumentException
-     *         if the object is null
+     * @throws IllegalArgumentException if the object is null
      */
     @Nonnull
     public static <T> String toJson(@Nonnull final T object) {

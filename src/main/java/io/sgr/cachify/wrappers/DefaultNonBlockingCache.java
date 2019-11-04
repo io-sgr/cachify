@@ -40,10 +40,8 @@ public class DefaultNonBlockingCache implements NonBlockingCache<String> {
     /**
      * Construct an non-blocking cache.
      *
-     * @param delegate
-     *         A backend blocking cache.
-     * @param executor
-     *         A executor.
+     * @param delegate A backend blocking cache.
+     * @param executor A executor.
      */
     public DefaultNonBlockingCache(@Nonnull final BlockingCache<String> delegate, @Nonnull final Executor executor) {
         checkArgument(nonNull(delegate), "Missing delegate!");
