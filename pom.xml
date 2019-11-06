@@ -35,7 +35,7 @@
         <it.redis.host>127.0.0.1</it.redis.host>
         <it.redis.port>6379</it.redis.port>
 
-        <dep.jackson.version>2.9.9</dep.jackson.version>
+        <dep.jackson.version>2.10.1</dep.jackson.version>
         <dep.google-guava.version>28.1-jre</dep.google-guava.version>
         <dep.google-jsr305.version>3.0.2</dep.google-jsr305.version>
         <dep.jedis.version>3.1.0</dep.jedis.version>
@@ -53,6 +53,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

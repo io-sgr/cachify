@@ -23,45 +23,43 @@ import static java.util.Objects.nonNull;
 import io.sgr.cachify.exceptions.ValueProcessingException;
 import io.sgr.cachify.utils.JsonUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-public final class JsonSerializer<V> implements ValueSerializer<V> {
+public final class Jackson2Serializer<V> implements ValueSerializer<V> {
 
-    private final TypeReference<V> valueTypeRef = new TypeReference<V>() {
-    };
-
+    private final Class<V> clazz;
     private final ObjectMapper objectMapper;
 
-    private JsonSerializer(final ObjectMapper objectMapper) {
+    private Jackson2Serializer(final Class<V> clazz, final ObjectMapper objectMapper) {
+        checkArgument(nonNull(clazz), "Wanna use a customized object mapper but passing NULL? That does not make sense!");
+        this.clazz = clazz;
+        checkArgument(nonNull(objectMapper), "Wanna use a customized object mapper but passing NULL? That does not make sense!");
         this.objectMapper = objectMapper;
     }
 
     /**
-     * Build JSON serializer with given object mapper.
+     * Build JSON serializer with given object class.
      *
+     * @param clazz The object class.
+     * @param <V> The type of object.
+     * @return The serializer.
+     */
+    public static <V> Jackson2Serializer<V> using(@Nonnull final Class<V> clazz) {
+        return using(clazz, JsonUtil.getObjectMapper());
+    }
+
+    /**
+     * Build JSON serializer with given object class and mapper.
+     *
+     * @param clazz The object class.
      * @param objectMapper The object mapper.
      * @param <V> The type of object.
      * @return The serializer.
      */
-    public static <V> JsonSerializer<V> using(@Nonnull final ObjectMapper objectMapper) {
-        checkArgument(nonNull(objectMapper), "Wanna use a customized object mapper but passing NULL? That does not make sense!");
-        return new JsonSerializer<>(objectMapper);
-    }
-
-    /**
-     * Build default JSON serializer with default object mapper from {@link JsonUtil#getObjectMapper()}.
-     *
-     * @param <V> The type of object.
-     * @return The serializer.
-     */
-    public static <V> JsonSerializer<V> getDefault() {
-        return new JsonSerializer<>(JsonUtil.getObjectMapper());
+    public static <V> Jackson2Serializer<V> using(@Nonnull final Class<V> clazz, @Nonnull final ObjectMapper objectMapper) {
+        return new Jackson2Serializer<>(clazz, objectMapper);
     }
 
     @Nonnull
@@ -69,7 +67,7 @@ public final class JsonSerializer<V> implements ValueSerializer<V> {
     public String serialize(@Nonnull final V value) throws ValueProcessingException {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new ValueProcessingException(e);
         }
     }
@@ -78,8 +76,8 @@ public final class JsonSerializer<V> implements ValueSerializer<V> {
     @Override
     public V deserialize(@Nonnull final String string) throws ValueProcessingException {
         try {
-            return objectMapper.readValue(string, valueTypeRef);
-        } catch (IOException e) {
+            return objectMapper.readValue(string, clazz);
+        } catch (Exception e) {
             throw new ValueProcessingException(e);
         }
     }

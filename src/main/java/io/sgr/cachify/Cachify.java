@@ -25,7 +25,6 @@ import static java.util.Objects.nonNull;
 import io.sgr.cachify.generator.KeyGenerator;
 import io.sgr.cachify.generator.NoOpKeyGenerator;
 import io.sgr.cachify.guava.BlockingGuavaCache;
-import io.sgr.cachify.serialization.JsonSerializer;
 import io.sgr.cachify.serialization.ValueSerializer;
 import io.sgr.cachify.wrappers.TieredBlockingCache;
 
@@ -36,7 +35,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public final class Cachify<V> implements BlockingCache<V> {
 
@@ -49,19 +47,11 @@ public final class Cachify<V> implements BlockingCache<V> {
 
     private Cachify(
             @Nonnull final String cacheName,
-            @Nullable final KeyGenerator keyGenerator, @Nullable final ValueSerializer<V> serializer,
+            @Nonnull final KeyGenerator keyGenerator, @Nonnull final ValueSerializer<V> serializer,
             @Nonnull final BlockingCache<String> backend) {
         this.cacheName = cacheName;
-        this.keyGenerator = Optional.ofNullable(keyGenerator)
-                .orElseGet(() -> {
-                    LOGGER.warn("No key generator specified, using default: {}", NoOpKeyGenerator.class);
-                    return NoOpKeyGenerator.getInstance();
-                });
-        this.serializer = Optional.ofNullable(serializer)
-                .orElseGet(() -> {
-                    LOGGER.warn("No serializer specified, using default: {}", JsonSerializer.class);
-                    return JsonSerializer.getDefault();
-                });
+        this.keyGenerator = keyGenerator;
+        this.serializer = serializer;
         this.backend = backend;
     }
 
@@ -200,6 +190,11 @@ public final class Cachify<V> implements BlockingCache<V> {
          */
         @Nonnull
         public BlockingCache<V> build() {
+            keyGenerator = Optional.ofNullable(keyGenerator)
+                    .orElseGet(() -> {
+                        LOGGER.warn("No key generator specified, using default: {}", NoOpKeyGenerator.class);
+                        return NoOpKeyGenerator.getInstance();
+                    });
             if (isNull(backend)) {
                 final long milli = Optional.ofNullable(valueExpiresInMilli)
                         .orElseGet(() -> {
