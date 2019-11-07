@@ -30,10 +30,12 @@ public class BlockingRedisCacheIT extends AbstractBlockingCacheTest {
     private static final String REDIS_HOST = Optional.ofNullable(emptyToNull(System.getenv("IT_REDIS_HOST"))).orElse("127.0.0.1");
     private static final int REDIS_PORT = Integer.parseInt(Optional.ofNullable(emptyToNull(System.getenv("IT_REDIS_PORT"))).orElse("6379"));
 
-    private final BlockingRedisCache redisCache = BlockingRedisCache.newBuilder()
-            .singleHost(REDIS_HOST, REDIS_PORT)
-            .expiresIn(2, TimeUnit.MINUTES)
-            .build();
+    private final BlockingRedisCache redisCache = new BlockingRedisCache(
+            RedisCacheConfiguration.newBuilder()
+                    .singleHost(REDIS_HOST, REDIS_PORT)
+                    .expiresIn(2, TimeUnit.MINUTES)
+                    .build()
+    );
 
     @Override
     protected BlockingCache<String> getBlockingCache() {
