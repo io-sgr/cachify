@@ -229,6 +229,7 @@
                         <IT_REDIS_HOST>${it.redis.host}</IT_REDIS_HOST>
                         <IT_REDIS_PORT>${it.redis.port}</IT_REDIS_PORT>
                     </environmentVariables>
+                    <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
                 </configuration>
             </plugin>
         </plugins>

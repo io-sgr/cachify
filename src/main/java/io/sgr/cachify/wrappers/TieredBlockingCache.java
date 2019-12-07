@@ -25,8 +25,10 @@ import io.sgr.cachify.CheckedValueGetter;
 import io.sgr.cachify.ValueGetter;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class TieredBlockingCache<V> implements BlockingCache<V> {
 
@@ -62,6 +64,12 @@ public class TieredBlockingCache<V> implements BlockingCache<V> {
     @Override
     public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
         return primary.uncheckedGet(key, k -> secondary.uncheckedGet(k, getter).orElse(null));
+    }
+
+    @Nonnull
+    @Override
+    public Stream<String> bulkGet(@Nonnull final String keyPattern, final @Nullable Integer maxPerPage) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

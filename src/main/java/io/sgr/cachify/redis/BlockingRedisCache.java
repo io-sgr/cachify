@@ -32,9 +32,16 @@ import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
+import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class BlockingRedisCache implements BlockingCache<String> {
 
@@ -80,6 +87,27 @@ public class BlockingRedisCache implements BlockingCache<String> {
         return result;
     }
 
+    @Nonnull
+    @Override
+    public Stream<String> bulkGet(@Nonnull String keyPattern, @Nullable final Integer maxPerPage) {
+        final Jedis jedis = jedisPool.getResource();
+        final ScanParams scanParams = new ScanParams().match(keyPattern + "*");
+        Optional.ofNullable(maxPerPage).ifPresent(scanParams::count);
+        final ScanResultSet rs = new ScanResultSet(jedis, scanParams);
+        return StreamSupport
+                .stream(new Spliterators.AbstractSpliterator<String>(Long.MAX_VALUE, Spliterator.ORDERED) {
+                    @Override
+                    public boolean tryAdvance(final Consumer<? super String> action) {
+                        if (rs.next()) {
+                            action.accept(rs.get());
+                            return true;
+                        }
+                        return false;
+                    }
+                }, false)
+                .onClose(rs::close);
+    }
+
     @Override
     public void put(@Nonnull final String key, @Nonnull final String value) {
         try (
@@ -108,12 +136,13 @@ public class BlockingRedisCache implements BlockingCache<String> {
                 Jedis jedis = jedisPool.getResource()
         ) {
             String nextCursor = SCAN_POINTER_START;
-            final ScanParams params = new ScanParams();
-            params.match(keyPattern);
+            final ScanParams params = new ScanParams().match(keyPattern + "*");
             ScanResult<String> scanResult;
             do {
                 scanResult = jedis.scan(nextCursor, params);
-                scanResult.getResult().forEach(this::evict);
+                if (!scanResult.getResult().isEmpty()) {
+                    jedis.del(scanResult.getResult().toArray(new String[0]));
+                }
                 nextCursor = scanResult.getCursor();
             } while (!nextCursor.equals(SCAN_POINTER_START));
         } catch (Exception e) {
@@ -124,6 +153,65 @@ public class BlockingRedisCache implements BlockingCache<String> {
     @Override
     public void close() {
         jedisPool.close();
+    }
+
+    private static final class ScanResultSet implements AutoCloseable {
+
+        private final Jedis jedis;
+        private final ScanParams scanParams;
+        private final LinkedList<String> result;
+
+        private String cursor = SCAN_POINTER_START;
+        private String currentItem;
+
+        private ScanResultSet(@Nonnull final Jedis jedis, @Nonnull final ScanParams scanParams) {
+            this.jedis = jedis;
+            this.scanParams = scanParams;
+            this.result = new LinkedList<>();
+            loadNextPage();
+        }
+
+        private boolean next() {
+            if (!result.isEmpty()) {
+                // Still have remaining item in current page.
+                this.currentItem = result.poll();
+                return true;
+            }
+            // Current page is empty
+            if (noMorePages()) {
+                return false;
+            }
+            loadNextPage(); // Load one more page then check again.
+            return next();  // No need to worry about stack overflow because after loadNextPage() result list will be non-empty or scan reaches its end.
+        }
+
+        private String get() {
+            return currentItem;
+        }
+
+        private void loadNextPage() {
+            ScanResult<String> scanResult;
+            String[] keys;
+            do {
+                scanResult = jedis.scan(cursor, scanParams);
+                keys = scanResult.getResult().toArray(new String[0]);
+                LOGGER.debug("Page '{}', size = {}", cursor, keys.length);
+                cursor = scanResult.getCursor();
+            } while (keys.length <= 0 && !noMorePages());
+            if (keys.length > 0) {
+                result.addAll(jedis.mget(keys));
+            }
+        }
+
+        private boolean noMorePages() {
+            return SCAN_POINTER_START.equals(cursor);    // Cursor is back to zero, which means end of scan.
+        }
+
+        @Override
+        public void close() {
+            result.clear();
+            jedis.close();
+        }
     }
 
 }

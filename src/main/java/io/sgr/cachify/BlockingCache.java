@@ -18,8 +18,10 @@
 package io.sgr.cachify;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public interface BlockingCache<V> extends AutoCloseable {
 
@@ -57,6 +59,30 @@ public interface BlockingCache<V> extends AutoCloseable {
     Optional<V> uncheckedGet(@Nonnull String key, @Nonnull ValueGetter<String, V> getter);
 
     /**
+     * Bulk get objects from cache using a give prefix of key.
+     * IMPORTANT! Please remember to put stream in a try-with-resource block so resources can be closed after you're done with the result!
+     *
+     * @param keyPattern The pattern of key.
+     * @return A stream of cached objects.
+     */
+    @Nonnull
+    default Stream<String> bulkGet(@Nonnull String keyPattern) {
+        return bulkGet(keyPattern, null);
+    }
+
+    /**
+     * Bulk get objects from cache using a give prefix of key.
+     * IMPORTANT! Please remember to put stream in a try-with-resource block so resources can be closed after you're done with the result!
+     *
+     * @param keyPattern The pattern of key.
+     * @param maxPerPage The maximum items count per page, might be ignored in some implementations like {@link io.sgr.cachify.guava.BlockingGuavaCache}
+     *         because all elements are already in memory.
+     * @return A stream of cached objects.
+     */
+    @Nonnull
+    Stream<String> bulkGet(@Nonnull String keyPattern, @Nullable Integer maxPerPage);
+
+    /**
      * Put an object in cache with given expiration.
      *
      * @param key The cache key.
@@ -77,5 +103,12 @@ public interface BlockingCache<V> extends AutoCloseable {
      * @param keyPattern The pattern of key.
      */
     void bulkEvict(@Nonnull String keyPattern);
+
+    /**
+     * Remove all objects from cache.
+     */
+    default void evictAll() {
+        bulkEvict("");
+    }
 
 }

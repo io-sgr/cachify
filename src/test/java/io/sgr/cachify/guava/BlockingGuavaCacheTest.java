@@ -20,13 +20,23 @@ package io.sgr.cachify.guava;
 import io.sgr.cachify.AbstractBlockingCacheTest;
 import io.sgr.cachify.BlockingCache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BlockingGuavaCacheTest extends AbstractBlockingCacheTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlockingGuavaCacheTest.class);
 
     private final BlockingGuavaCache guavaCache = BlockingGuavaCache.newBuilder().build();
 
     @Override
     protected BlockingCache<String> getBlockingCache() {
         return guavaCache;
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return LOGGER;
     }
 
 }

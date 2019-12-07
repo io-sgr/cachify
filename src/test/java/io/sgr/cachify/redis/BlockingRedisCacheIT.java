@@ -22,10 +22,15 @@ import static com.google.common.base.Strings.emptyToNull;
 import io.sgr.cachify.AbstractBlockingCacheTest;
 import io.sgr.cachify.BlockingCache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class BlockingRedisCacheIT extends AbstractBlockingCacheTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlockingRedisCacheIT.class);
 
     private static final String REDIS_HOST = Optional.ofNullable(emptyToNull(System.getenv("IT_REDIS_HOST"))).orElse("127.0.0.1");
     private static final int REDIS_PORT = Integer.parseInt(Optional.ofNullable(emptyToNull(System.getenv("IT_REDIS_PORT"))).orElse("6379"));
@@ -33,12 +38,17 @@ public class BlockingRedisCacheIT extends AbstractBlockingCacheTest {
     private final BlockingRedisCache redisCache = new BlockingRedisCache(
             RedisCacheConfiguration.newBuilder()
                     .singleHost(REDIS_HOST, REDIS_PORT)
-                    .expiresIn(2, TimeUnit.MINUTES)
+                    .expiresIn(1, TimeUnit.HOURS)
                     .build()
     );
 
     @Override
     protected BlockingCache<String> getBlockingCache() {
         return redisCache;
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return LOGGER;
     }
 }

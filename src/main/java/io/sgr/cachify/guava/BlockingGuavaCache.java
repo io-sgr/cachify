@@ -31,8 +31,10 @@ import com.google.common.cache.CacheBuilder;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public final class BlockingGuavaCache implements BlockingCache<String> {
 
@@ -77,6 +79,12 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
         final Optional<String> result = Optional.ofNullable(value);
         result.ifPresent(v -> put(key, v));
         return result;
+    }
+
+    @Nonnull
+    @Override
+    public Stream<String> bulkGet(@Nonnull final String keyPattern, @Nullable Integer maxPerPage) {
+        return cache.asMap().keySet().stream().filter(matchPattern(keyPattern)).map(cache::getIfPresent);
     }
 
     @Override

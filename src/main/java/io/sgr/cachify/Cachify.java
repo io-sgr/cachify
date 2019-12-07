@@ -33,8 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public final class Cachify<V> implements BlockingCache<V> {
 
@@ -77,6 +79,12 @@ public final class Cachify<V> implements BlockingCache<V> {
     public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
         final V value = get(key).orElse(getter.get(key));
         return Optional.ofNullable(value);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<String> bulkGet(@Nonnull final String keyPattern, @Nullable final Integer maxPerPage) {
+        return backend.bulkGet(keyPattern, maxPerPage);
     }
 
     @Override
