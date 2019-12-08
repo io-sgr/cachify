@@ -51,19 +51,19 @@ public class TieredBlockingCache<V> implements BlockingCache<V> {
     @Nonnull
     @Override
     public Optional<V> get(@Nonnull final String key) {
-        return primary.get(key, k -> secondary.get(k).orElse(null));
+        return primary.get(key, secondary::get);
     }
 
     @Nonnull
     @Override
     public <E extends Exception> Optional<V> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, V, E> getter) throws E {
-        return primary.get(key, k -> secondary.get(k, getter).orElse(null));
+        return primary.get(key, k -> secondary.get(k, getter));
     }
 
     @Nonnull
     @Override
     public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
-        return primary.uncheckedGet(key, k -> secondary.uncheckedGet(k, getter).orElse(null));
+        return primary.uncheckedGet(key, k -> secondary.uncheckedGet(k, getter));
     }
 
     @Nonnull

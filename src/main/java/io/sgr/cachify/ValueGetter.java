@@ -17,8 +17,12 @@
 
 package io.sgr.cachify;
 
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
 public interface ValueGetter<K, V> {
 
-    V get(K key);
+    Optional<V> get(@Nonnull K key);
 
 }

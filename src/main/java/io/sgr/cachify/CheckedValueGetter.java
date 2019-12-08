@@ -17,8 +17,12 @@
 
 package io.sgr.cachify;
 
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
 public interface CheckedValueGetter<K, V, E extends Exception> {
 
-    V get(K key) throws E;
+    Optional<V> get(@Nonnull K key) throws E;
 
 }

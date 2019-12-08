@@ -70,15 +70,15 @@ public final class Cachify<V> implements BlockingCache<V> {
     @Nonnull
     @Override
     public <E extends Exception> Optional<V> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, V, E> getter) throws E {
-        final V value = get(key).orElse(getter.get(key));
-        return Optional.ofNullable(value);
+        final Optional<V> inCache = get(key);
+        return inCache.isPresent() ? inCache : getter.get(key);
     }
 
     @Nonnull
     @Override
     public Optional<V> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, V> getter) {
-        final V value = get(key).orElse(getter.get(key));
-        return Optional.ofNullable(value);
+        final Optional<V> inCache = get(key);
+        return inCache.isPresent() ? inCache : getter.get(key);
     }
 
     @Nonnull

@@ -88,7 +88,7 @@ public abstract class AbstractBlockingCacheTest {
     @Test
     public void testGetWithGetter() {
         final BlockingCache<String> cache = getBlockingCache();
-        Optional<String> result = cache.get("k3", key -> "v3");
+        Optional<String> result = cache.get("k3", key -> Optional.of("v3"));
         assertEquals("v3", result.orElse(null));
         result = cache.get("k3");
         assertEquals("v3", result.orElse(null));
@@ -97,7 +97,7 @@ public abstract class AbstractBlockingCacheTest {
     @Test
     public void testUncheckedGetWithGetter() {
         final BlockingCache<String> cache = getBlockingCache();
-        Optional<String> result = cache.uncheckedGet("k4", key -> "v4");
+        Optional<String> result = cache.uncheckedGet("k4", key -> Optional.of("v4"));
         assertEquals("v4", result.orElse(null));
         result = cache.get("k4");
         assertEquals("v4", result.orElse(null));

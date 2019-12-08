@@ -66,8 +66,8 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
     @Nonnull
     @Override
     public <E extends Exception> Optional<String> get(@Nonnull final String key, @Nonnull final CheckedValueGetter<String, String, E> getter) throws E {
-        final String value = get(key).orElse(getter.get(key));
-        final Optional<String> result = Optional.ofNullable(value);
+        final Optional<String> inCache = get(key);
+        final Optional<String> result = inCache.isPresent() ? inCache : getter.get(key);
         result.ifPresent(v -> put(key, v));
         return result;
     }
@@ -75,8 +75,8 @@ public final class BlockingGuavaCache implements BlockingCache<String> {
     @Nonnull
     @Override
     public Optional<String> uncheckedGet(@Nonnull final String key, @Nonnull final ValueGetter<String, String> getter) {
-        final String value = get(key).orElse(getter.get(key));
-        final Optional<String> result = Optional.ofNullable(value);
+        final Optional<String> inCache = get(key);
+        final Optional<String> result = inCache.isPresent() ? inCache : getter.get(key);
         result.ifPresent(v -> put(key, v));
         return result;
     }
