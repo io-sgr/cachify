@@ -46,7 +46,7 @@
         <dep.log4j2.version>2.12.1</dep.log4j2.version>
 
         <!-- For tests -->
-        <dep.junit.version>4.12</dep.junit.version>
+        <dep.junit.version>4.13.1</dep.junit.version>
         <dep.mockito.version>2.23.4</dep.mockito.version>
 
         <dep.plugin.docker.version>0.31.0</dep.plugin.docker.version>
